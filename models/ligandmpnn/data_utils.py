@@ -503,18 +503,18 @@ def parse_PDB(
     S = np.array([restype_str_to_int[AA] for AA in S], np.int32)
     X = np.concatenate([N[:, None], CA[:, None], C[:, None], O[:, None]], 1)
 
-    try:
-        Y = np.array(other_atoms.getCoords(), dtype=np.float32)
-        Y_t = list(other_atoms.getElements())
-        Y_t = np.array(
-            [element_dict[y_t.upper()] if y_t.upper() in element_list else 0
-                for y_t in Y_t],dtype=np.int32,)
-        Y_m = (Y_t != 1) * (Y_t != 0)
+    element_dict = {element: idx for idx, element in element_dict_rev.items()}
+    Y = np.array([atom.coord for atom in other_atoms], dtype=np.float32).reshape(-1, 3)
+    Y_t = np.array(
+        [element_dict.get(atom.element.upper(), 0) for atom in other_atoms],
+        dtype=np.int32,
+    )
+    Y_m = (Y_t != 1) * (Y_t != 0)
 
-        Y = Y[Y_m, :]
-        Y_t = Y_t[Y_m]
-        Y_m = Y_m[Y_m]
-    except:
+    Y = Y[Y_m, :]
+    Y_t = Y_t[Y_m]
+    Y_m = Y_m[Y_m]
+    if Y.shape[0] == 0:
         Y = np.zeros([1, 3], np.float32)
         Y_t = np.zeros([1], np.int32)
         Y_m = np.zeros([1], np.int32)
