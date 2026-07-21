@@ -1,12 +1,13 @@
 # dEVA: design by EVolutionary Algorithm
-## a multi-objective modular framework for protein design
 
 ![image](assets/dEVA.png)
 
 > [!NOTE]
 > An updated version of dEVA is actively maintained at [gelnesr/dEVA](https://github.com/gelnesr/dEVA). If you have any issues, please report it there and will get back to you ASAP.
 
-This guide explains how to add new objectives (scoring functions) to the dEVA protein design platform. This allows for a modular multi-objective design framework. While catered for structure-based protein design, in principle this can be rewritten for any kind of multi-objective generation. 
+This work describes dEVA, first introduced in [Zero-shot design of a de novo metalloenzyme](https://www.biorxiv.org/content/10.64898/2026.04.23.720277v1).
+
+This guide explains how to add new objectives (scoring functions) to the dEVA protein design platform. While catered for structure-based protein design, in principle the code here can be modified for any multi-objective generation. 
 
 ## Overview
 
@@ -286,3 +287,16 @@ python run.py --config configs/evolution.yml --models seq_model file_size_score:
 - `core/interfaces.py`: Base class definition
 - `core/registry.py`: Registration mechanism
 - `evolve/individual.py`: Individual class implementation
+
+# Citation
+
+If you are using our code, datasets, or model, please use the following citation:
+```bibtex
+@article {ElNesr-2026,
+    author = {El Nesr, Gina and Duerr, Simon L. and Mathews, Irimpan I. and Wen, Qi and Zhao, Kewei and Sarangi, Ritimukta and Roethlisberger, Ursula and Sunden, Fanny and Huang, Possu},
+    title = {Zero-shot design of a de novo metalloenzyme},
+    year = {2026},
+    doi = {10.64898/2026.04.23.720277},
+    journal = {bioRxiv}
+}
+```
