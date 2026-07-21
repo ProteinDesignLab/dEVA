@@ -16,9 +16,6 @@ evolution:
 seq_model: ligandmpnn   # choices: ligandmpnn or proteinmpnn
 
 models: 
-  plip:
-    weights: null
-    metals: null
 
   metal3d:
     model_path: ./models/metal3d/weights/metal3d_clean_ec.pth #./models/metal3d/weights/metal_0.5A_v3_d0.2_16Abox.pth
@@ -28,9 +25,9 @@ models:
   ligandmpnn: 
     model_path: ./models/ligandmpnn/model_params/ligandmpnn_v_32_020_25.pt
     packer_path: ./models/ligandmpnn/model_params/ligandmpnn_sc_v_32_002_16.pt
-    var_residues: "A58 A60 A79 A81 A101 A103 A131 A159 A161 A182"
+    var_residues: "A6 A8 A33 A58 A60 A79 A81 A101 A103 A131 A159 A161 A180 A182" # residues to mutate
     fixed_residues: ""       # e.g. "A12 A13 A14 B2 B25"
-    bias_AA:  "H:1.5"         # e.g. "A:-1.024,P:2.34,C:-12.34"
+    bias_AA:  "H:1.5,E:-0.5,D:-0.5"         # e.g. "A:-1.024,P:2.34,C:-12.34"
     bias_AA_per_residue: ""  # e.g. "A12:A:-1.024,P:2.34"
     omit_AA: "C"
     omit_AA_per_residue: ""
