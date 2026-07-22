@@ -1,0 +1,77 @@
+# config 
+general: 
+  cuda: true
+  seed: 2
+  outputs: /scratch/users/gelnesr/dEVA/substrate_example_B1 # path for outputs
+  save_outputs: true
+
+input: 
+  pdb: inputs/B1.pdb #"inputs/2VVB.pdb" # the pdb
+
+evolution: 
+  n_generations: 10
+  n_individuals: 5
+  n_mutations: 1
+
+seq_model: ligandmpnn   # choices: ligandmpnn or proteinmpnn
+
+models: 
+
+  pocket_shape:
+    ligand_pdb: ./inputs/B1_ligand.pdb
+    target_occ: 105.0
+    r_clash: 2.4
+    w_clash: 1.0
+    w_seal: 0.0          # see below
+    verbose: false
+
+  metal3d:
+    model_path: ./models/metal3d/weights/metal3d_cat.pth #./models/metal3d/weights/metal_0.5A_v3_d0.2_16Abox.pth
+    max_metal_p: 0.2
+    threshold: 5
+
+  ligandmpnn: 
+    model_path: ./models/ligandmpnn/model_params/ligandmpnn_v_32_020_25.pt
+    packer_path: ./models/ligandmpnn/model_params/ligandmpnn_sc_v_32_002_16.pt
+    var_residues: "" # residues to mutate
+    fixed_residues: "A15 A190 A194"                      # e.g. "A12 A13 A14 B2 B25"
+    bias_AA:  "H:0.5,E:-0.5,D:-0.5"         # e.g. "A:-1.024,P:2.34,C:-12.34"
+    bias_AA_per_residue: ""                 # e.g. "A12:A:-1.024,P:2.34"
+    omit_AA: "C"
+    omit_AA_per_residue: ""
+    symmetry_residues: ""                   # e.g. "A12,A13,A14|C2,C3|A5,B6"
+    symmetry_weights: ""
+    homo_oligomer: 0
+    repack_everything: 0
+    sc_num_denoising_steps: 8
+    sc_num_samples: 1
+    ligand_mpnn_cutoff_for_score: 20.0
+    use_atom_context: 1
+    temperature: 0.5
+    zero_indexed: 0
+    autoregressive_score: 0
+    single_aa_score: 1
+    chains_to_design: ""
+    parse_these_chains_only: ""
+    parse_atoms_with_zero_occupancy: 0
+    verbose: false
+  
+  proteinmpnn: 
+    model_path: ./models/ligandmpnn/model_params/proteinmpnn_v_48_010.pt
+    ligand_mpnn_cutoff_for_score: 20.0
+    temperature: 0.5
+    zero_indexed: 0
+    autoregressive_score: 0
+    single_aa_score: 1 
+    fixed_residues: ""       # e.g. "A12 A13 A14 B2 B25"
+    bias_AA: ""              # e.g. "A:-1.024,P:2.34,C:-12.34"
+    bias_AA_per_residue: ""  # e.g. "A12:A:-1.024,P:2.34"
+    omit_AA: "C"
+    omit_AA_per_residue: ""
+    symmetry_residues: ""    # e.g. "A12,A13,A14|C2,C3|A5,B6"
+    symmetry_weights: ""
+    homo_oligomer: 0
+    chains_to_design: ""
+    parse_these_chains_only: ""
+    parse_atoms_with_zero_occupancy: 0
+    verbose: false

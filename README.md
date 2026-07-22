@@ -17,6 +17,8 @@ In dEVA, objectives are implemented as **models** that score protein designs. Ea
 3. Is registered with a unique name
 4. Adds fitness values to individuals during evolution
 
+> Worked examples are available in the [`examples/`](examples/) folder, including a theozyme-generated design run (`examples/example_substrate/`) that optimizes the a custom pocket-shape objective alongside sequence and metal-coordination scoring. Each example includes a runnable config, the objective code, and the resulting Pareto front.
+
 ## Step-by-Step Guide
 
 ### Step 1: Create Your Objective Class
