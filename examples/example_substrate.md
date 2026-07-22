@@ -54,5 +54,3 @@ do — satisfy the objectives jointly and make the trade-offs explicit.
 | 0.487 | 0.943 | 0.957 |
 | 0.460 | 0.944 | 0.981 |
 
-**[`substrate_interactive.html`](https://htmlpreview.github.io/?https://github.com/gelnesr/dEVA/blob/main/examples/html/substrate_interactive.html)** — the same plot, rotatable (drag / scroll).
-
