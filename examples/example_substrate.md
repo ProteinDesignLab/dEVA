@@ -35,11 +35,12 @@ python run.py --config configs/substrate_example.yml \
 
 ## The result
 
-![Pareto front](images/pareto_substrate_ex.png)
+The Pareto front represents a real trade-off: front designs raise metal probability while
+giving up a little sequence likelihood and pocket enclosure, and one improves
+pocket shape past the input. This is what a multi-objective optimizer should
+do — satisfy the objectives jointly and make the trade-offs explicit.
 
-- **gray** — all designs
-- **black** — the Pareto front
-- **red** — the original B1 design
+![Pareto front](images/pareto_substrate_ex.png)
 
 **Original B1:** p(seq) 0.499 · p(metal) 0.927 · pocket 0.969
 
@@ -53,10 +54,5 @@ python run.py --config configs/substrate_example.yml \
 | 0.487 | 0.943 | 0.957 |
 | 0.460 | 0.944 | 0.981 |
 
-The Pareto front represents a real trade-off: front designs raise metal probability while
-giving up a little sequence likelihood and pocket enclosure, and one improves
-pocket shape past the input. This is what a multi-objective optimizer should
-do — satisfy the objectives jointly and make the trade-offs explicit.
-
-**`interactive.html`** — the same plot, rotatable (drag / scroll).
+**[`substrate_interactive.html`](https://htmlpreview.github.io/?https://github.com/gelnesr/dEVA/blob/main/examples/html/substrate_interactive.html)** — the same plot, rotatable (drag / scroll).
 
