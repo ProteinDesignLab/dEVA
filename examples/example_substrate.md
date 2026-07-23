@@ -54,3 +54,9 @@ do — satisfy the objectives jointly and make the trade-offs explicit.
 | 0.487 | 0.943 | 0.957 |
 | 0.460 | 0.944 | 0.981 |
 
+
+## Comparing the designs
+
+Below we compare in cyan (the new dEVA design) and orange (the original B1). We note the difference in charge and pocket shape between the original design and dEVA design, while maintaining the active site.
+
+![active site](images/activesite_b1.png)
