@@ -142,8 +142,8 @@ def prepare_ligandmpnn(args,
                        device='cuda'):
 
     encoded_residues, encoded_residue_dict, encoded_residue_dict_rev = get_encoded_residues(protein_dict, icodes)
-    bias_AA_per_residue = bias_aa(args, encoded_residues, design_params['bias_AA_per_residue'], device)
-    omit_AA_per_residue = omit_aa(args, encoded_residues, design_params['omit_AA_per_residue'], device)
+    bias_AA_per_residue = bias_aa(args, encoded_residues, design_params['bias_AA_per_residue'], device=device)
+    omit_AA_per_residue = omit_aa(args, encoded_residues, encoded_residue_dict, design_params['omit_AA_per_residue'], device=device)
 
     fixed_residues = design_params['fixed_residues']
     var_residues = design_params['var_residues']
@@ -170,11 +170,7 @@ def prepare_ligandmpnn(args,
         )
 
     protein_dict['fixed_positions'] = fixed_positions
-
-    if fixed_residues:
-        protein_dict["chain_mask"] = chain_mask * fixed_positions
-    else:
-        protein_dict["chain_mask"] = chain_mask
+    protein_dict["chain_mask"] = chain_mask * fixed_positions
 
     if args.verbose:
         mask = protein_dict["chain_mask"].bool()
