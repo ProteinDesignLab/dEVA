@@ -127,7 +127,7 @@ class MPNNModel(BaseModel):
         seq_str = "".join([restype_int_to_str[AA] for AA in S_temp.squeeze().cpu().numpy()])
 
         score_dict_new = self.model.score(feature_dict, use_sequence=1)
-        probs_1d_new, _ = self.get_probs(score_dict_new, protein_dict, seq_tensor)
+        overall_probs = self.get_probs(score_dict_new, protein_dict, seq_tensor, overall=True)
 
         outfile = create_file(self.output_packed, self.pdb_name, individual.get_gen(), individual.get_index(), self.seed)
 
@@ -137,19 +137,19 @@ class MPNNModel(BaseModel):
         individual.update_name(name=outfile)
         individual.update_seq_str(seq_str=seq_str)
         individual.update_seq_tensor(seq_tensor=seq_tensor)
-        individual.add_fitness({'pmpnn': np.mean(probs_1d_new)})
+        individual.add_fitness({'pmpnn': np.mean(overall_probs)})
 
         torch.cuda.empty_cache()
         gc.collect()
 
-    def get_probs(self, score_dict, protein_dict, sequence):
-        probs_2d = torch.mean(torch.exp(score_dict["log_probs"]),0)
+    def get_probs(self, score_dict, protein_dict, sequence, overall=False):
+        probs_2d = torch.exp(score_dict["log_probs"]).mean(dim=0)
         temp_seq = sequence.squeeze()
         L = temp_seq.shape[0]
-        empty_list = torch.arange(L)
         
         probs_1d = probs_2d[torch.arange(L), temp_seq].detach().cpu().numpy().astype('float64')
-        
+        if overall:
+            return probs_1d
         chain_mask = protein_dict['chain_mask'].detach().cpu().numpy()
         probs_1d = probs_1d * chain_mask
         

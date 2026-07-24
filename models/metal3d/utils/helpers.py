@@ -121,7 +121,7 @@ def get_all_metalbinding_resids(pdb_file):
     )
 
 
-def compute_average_p_fast(point, cutoff=0.5):
+def compute_average_p_fast(point, cutoff=0.5, k=20, default=1e-5):
     """Using KDTree find the closest gridpoints
 
     Parameters
@@ -135,13 +135,12 @@ def compute_average_p_fast(point, cutoff=0.5):
     -------
     average_p : numpy.ndarray
         Average probability of shape (1,)"""
-    p = 0
-    nearest_neighbors, indices = tree.query(
-        point, k=20, distance_upper_bound=cutoff, workers=1
-    )
-    if np.min(nearest_neighbors) != np.inf:
-        p = np.mean(output_v[indices[nearest_neighbors != np.inf]])
-    return p
+
+    d, i = tree.query(point, k=k, distance_upper_bound=cutoff, workers=1)
+    m = np.isfinite(d)
+    
+    return float(output_v[i[m]].mean()) if np.any(m) else float(default)
+
 
 
 def get_probability_mean(grid, prot_centers, pvalues):
@@ -234,7 +233,7 @@ import warnings
 
 
 def find_unique_sites(
-    pvalues, grid, writeprobes=False, probefile="probes.pdb", threshold=7, p=0.1
+    pvalues, grid, writeprobes=False, probefile="probes.pdb", threshold=7, p=0.0001
 ):
     """The probability voxels are points and the voxel clouds may contain multiple metals
     This function finds the unique sites and returns the coordinates of the unique sites.

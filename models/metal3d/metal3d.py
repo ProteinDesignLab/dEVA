@@ -15,12 +15,12 @@ torch.backends.cudnn.allow_tf32 = False
 def run(model, 
         output_metals=".", 
         output_gen=".", 
-        out_root = "cur",
         pdb='curr.pdb', 
         pdb_name = 'curr', 
         var_idx='', 
         max_metal_p=0.2, 
         overwrite=True, 
+        threshold=7,
         device='cuda'):
 
     if len(var_idx) > 0:
@@ -55,50 +55,74 @@ def run(model,
     bb = get_bb(prot_v)
     grid, _ = create_grid_fromBB(bb)
     probability_values = get_probability_mean(grid, prot_v, output_v)
-        
+
     result = find_unique_sites(
         probability_values,
         grid,
         writeprobes=False,  # Don't write all probes initially
-        probefile=f'{out_root}.pdb',
-        threshold=7,
+        probefile=f'{output_metals}.pdb',
+        threshold=threshold,
         p=max_metal_p,
     )
 
-    with open(f"{out_root}.results", "w") as f:
+    with open(f"{output_metals}.results", "w") as f:
         f.write(str(list(per_res_p.numpy())))
         f.write(str(np.max(probability_values).item()))
 
     m3d = None
     found = False
     max_idx = -1
-    if result != None:
-        # Find the site with maximum probability
+    if result is not None:
         _p = [l[1] for l in result]
-        max_idx = _p.index(max(_p))
-        max_site = result[max_idx]
+        max_site = max(result, key=lambda x: x[1])
+        max_idx, max_site = max(enumerate(result), key=lambda t: t[1][1])  
         
         # Write only the maximum probability zinc to the probe file
-        with open(f'{out_root}.pdb', "w") as f:
+        with open(f'{output_metals}.pdb', "w") as f:
             f.write(f"HETATM  {1:3} ZN    ZN A  {1}    {max_site[0][0]: 8.3f}{max_site[0][1]: 8.3f}{max_site[0][2]: 8.3f}  {max_site[1]:.2f}  0.0           ZN2+\n")
         
         m3d = {"p": _p[max_idx],
                "per_res_p": list(per_res_p.numpy()),
                "resnames": list(resnames),
-               "probefile": f'{out_root}.pdb'}
+               "probefile": f'{output_metals}.pdb'}
         
         found = True
         max_idx = 0
-            
+
+    m3d = None
+    found = False
+
+    if result is not None:
+        probs = [l[1] for l in result]
+        topX = sorted(enumerate(result), key=lambda t: t[1][1], reverse=True)[:1] # X = 1
+
+        with open(f'{output_metals}.pdb', "w") as f:
+            for i, (idx, (coords, p)) in enumerate(topX, start=1):
+                x, y, z = coords
+                f.write(
+                    f"HETATM{i:5d} ZN    ZN A{i:4d}"
+                    f"{x:8.3f}{y:8.3f}{z:8.3f}"
+                    f"{p:6.2f}  0.0           ZN2+\n"
+                )
+
+        m3d = {
+            "p": [p for (_, (_, p)) in topX],  # top X probabilities
+            "per_res_p": list(per_res_p.numpy()),
+            "resnames": list(resnames),
+            "probefile": f"{output_metals}.pdb"
+        }
+
+    found = True
+
     p1 = parmed.load_file(pdb)
-    outfile = f'{out_root}_metal3d.pdb'
+    outfile = f'{output_gen}_metal3d.pdb'
 
     if m3d == None:
         metal_predicted = 0.01
         p1.save(outfile, overwrite=overwrite)
         return metal_predicted, outfile, False
     else:
-        metal_predicted = float(m3d["p"])
+        metal_predicted = float(sum(m3d["p"]))/len(m3d["p"]) # write out sum
         if metal_predicted > max_metal_p:
             p2 = parmed.load_file(m3d["probefile"])
             combined = p1['!@ZN'] + p2

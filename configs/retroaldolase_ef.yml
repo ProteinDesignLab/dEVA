@@ -1,0 +1,171 @@
+# configs/retroaldolase_ef.yml
+#
+# Three-objective run on the RA95-series retro-aldolase scaffold:
+#   p(seq)          sequence likelihood            (LigandMPNN)
+#   electric_field  electrostatic preorganization  (Coulomb + FDB, this work)
+#   pocket_shape    substrate enclosure            (geometric, optional)
+#
+# Run with:
+#   python run.py --config configs/retroaldolase_ef.yml \
+#                 --models seq_model electric_field
+#
+# seq_model must be listed first. Objectives are evaluated in the order given,
+# and each sees the PDB left by the previous one, so electric_field scores the
+# repacked side chains.
+
+general:
+  cuda: true
+  seed: 2
+  outputs: /scratch/users/gelnesr/dEVA/retroaldolase_ef
+  save_outputs: true
+
+input:
+  # MUST contain the ligand: theozyme_map looks up 2K6 atoms at setup.
+  # Per-design PDBs do not need it (the probe is absolute coordinates by then).
+  pdb: inputs/4PA8.pdb
+
+evolution:
+  n_generations: 60
+  # With 3+ objectives a small population leaves everything mutually
+  # non-dominated and NSGA-II falls back on crowding distance alone.
+  # 60-100 is the range where the front is actually meaningful.
+  n_individuals: 60
+  n_mutations: 3
+
+seq_model: ligandmpnn
+
+models:
+
+  desolvation:
+    verbose: true
+  # ---------------------------------------------------------------------
+  # Local electric field  ->  barrier reduction in kcal/mol (higher better)
+  # ---------------------------------------------------------------------
+  electric_field:
+
+    # -- theozyme route: probe point, reaction axis and delta_mu are all
+    #    derived automatically at setup by superposing the QM theozyme onto
+    #    input.pdb. Because the backbone and ligand are fixed, these are
+    #    constants for the whole run and are computed once.
+    theozyme_reactant: ./inputs/Reactant_Oriented.txt
+    theozyme_ts:       ./inputs/Transition_State_Oriented.txt
+
+    # THEOZYME_ATOM_INDEX : RESNAME : RESNUM : ATOMNAME   (0-based xyz index)
+    # Maps QM model atoms onto their counterparts in input.pdb.
+    # Verified: RMSD 0.50 A on 4PA8.
+    theozyme_map:
+      - "4:LYS:1083:NZ"        # Lys N (butylamine model) -> catalytic Lys NZ
+      - "14:2K6:2001:C10"      # carbinolamine C
+      - "15:2K6:2001:C9"       # CH2      \  the breaking
+      - "16:2K6:2001:C8"       # CH(OH)Ar /  C-C bond
+
+    # Optional. Auto-detection picks the most-elongated bond that is still
+    # bonded at the TS (C15->C16, 1.55 -> 2.08 A). Uncomment to force it.
+    # theozyme_bond: [15, 16]
+    # theozyme_max_ts_dist: 3.0     # pairs longer than this at the TS are
+    #                               # treated as dissociated, not TS bonds
+    # theozyme_max_rmsd: 1.5        # superposition sanity check
+
+    # -- delta_mu = mu(TS) - mu(reactant), in DEBYE, as a vector in the
+    #    theozyme frame. Rotated into the design frame automatically.
+    #    Get it from the two Gaussian jobs (dipole_reactant.gjf / dipole_ts.gjf):
+    #    grep "Dipole moment" in each log, subtract.
+    #
+    #    WITH delta_mu    -> fitness is barrier reduction, kcal/mol
+    #    WITHOUT it       -> fitness is field projection on the axis, MV/cm
+    #
+    #    CHECK THE SIGN before a long run: score RA95-Core vs RA95.5-8F and
+    #    confirm 8F wins by ~5 kcal/mol. If it loses, delta_mu is inverted
+    #    and the run will confidently optimize toward a HIGHER barrier.
+    delta_mu_theozyme: [-0.3111, -4.3508, 5.2337]     # Debye, |Δμ| = 6.81
+    # optional higher-order FDB terms (paper eq 7); leave at 0 unless you
+    # have them from the Gaussian "polar" output
+    # delta_alpha: 0.0        # A^3
+    # delta_beta:  0.0        # a.u.
+
+    # -- residues represented in the QM theozyme model, excluded from the
+    #    Coulomb sum (paper: "The entire protein was considered except for
+    #    the Lys83 and Tyr51 catalytic residues").
+    #    These MUST also appear in ligandmpnn.fixed_residues below, or dEVA
+    #    can mutate a catalytic residue that this objective cannot see.
+    exclude_residues: ["A1083"]
+
+    # -- charges. Built-in ff14SB table is fine for ranking designs.
+    #    For numbers going into the paper, dump charges from tleap and point
+    #    charge_file at a "RESNAME ATOMNAME CHARGE" file.
+    # charge_file: ./inputs/charges_tleap.dat
+
+    include_hetatm: false     # ligand is in the QM model -> keep it out
+    fix_incomplete: true      # renormalize residues with missing atoms and
+                              # filter altloc; both silently corrupt the sum
+    report_au: false          # report MV/cm rather than atomic units
+    verbose: true
+
+  # ---------------------------------------------------------------------
+  # Optional geometric objective. Drop it if you would rather keep the
+  # front to two objectives at this population size.
+  # ---------------------------------------------------------------------
+  # pocket_shape:
+  #   ligand_pdb: ./inputs/2K6_ligand.pdb
+  #   target_occ: 105.0       # CALIBRATE: mean protein heavy atoms within
+  #                           # 8 A per ligand atom, from a reference pocket
+  #   r_clash: 2.4
+  #   w_clash: 1.0
+  #   w_seal: 0.0
+  #   verbose: true
+
+  # ---------------------------------------------------------------------
+  # Sequence design
+  # ---------------------------------------------------------------------
+  ligandmpnn:
+    model_path: ./models/ligandmpnn/model_params/ligandmpnn_v_32_020_25.pt
+    packer_path: ./models/ligandmpnn/model_params/ligandmpnn_sc_v_32_002_16.pt
+
+    # Distal positions to design. Hunt et al. define distal as >8 A from the
+    # inhibitor; the 10 distal mutations that distinguish RA95-Core from
+    # RA95.5-8F are the natural target set. Replace with your own list.
+    var_residues: ""
+
+    # Catalytic residues: held fixed AND excluded from the field sum above.
+    fixed_residues: "A1083"
+
+    bias_AA: ""
+    bias_AA_per_residue: ""
+    omit_AA: "C"
+    omit_AA_per_residue: ""
+    symmetry_residues: ""
+    symmetry_weights: ""
+    homo_oligomer: 0
+    repack_everything: 0
+    sc_num_denoising_steps: 8
+    sc_num_samples: 5
+    ligand_mpnn_cutoff_for_score: 20.0
+    use_atom_context: 1
+    temperature: 0.5
+    zero_indexed: 0
+    autoregressive_score: 0
+    single_aa_score: 1
+    chains_to_design: ""
+    parse_these_chains_only: ""
+    parse_atoms_with_zero_occupancy: 0
+    verbose: false
+
+  proteinmpnn:
+    model_path: ./models/ligandmpnn/model_params/proteinmpnn_v_48_010.pt
+    ligand_mpnn_cutoff_for_score: 20.0
+    temperature: 0.5
+    zero_indexed: 0
+    autoregressive_score: 0
+    single_aa_score: 1
+    fixed_residues: "A1083"
+    bias_AA: ""
+    bias_AA_per_residue: ""
+    omit_AA: "C"
+    omit_AA_per_residue: ""
+    symmetry_residues: ""
+    symmetry_weights: ""
+    homo_oligomer: 0
+    chains_to_design: ""
+    parse_these_chains_only: ""
+    parse_atoms_with_zero_occupancy: 0
+    verbose: false

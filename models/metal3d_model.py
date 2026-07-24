@@ -31,6 +31,7 @@ class Metal3DModel(BaseModel):
         
         self.model_config = self.config.models.metal3d
         self.max_metal_p = self.model_config.max_metal_p
+        self.threshold = self.model_config.threshold
         
         outputs = self.config.general.outputs
 
@@ -61,15 +62,16 @@ class Metal3DModel(BaseModel):
         gen = individual.get_gen()
         curr_pdb = individual.get_name()
         
-        out_root = os.path.join(self.output_metals, f'{self.pdb_name}_metals_gen{gen}_ind{index}')
+        metals_root = os.path.join(self.output_metals, f'{self.pdb_name}_metals_gen{gen}_ind{index}')
+        gen_root = os.path.join(self.output_gen, f'{self.pdb_name}_metals_gen{gen}_ind{index}')
 
         pmetal, outfile, found = run(self.model,
-                                    output_metals = self.output_metals,
-                                    output_gen = self.output_gen,
-                                    out_root = out_root,
+                                    output_metals = metals_root,
+                                    output_gen = gen_root,
                                     pdb = curr_pdb,
                                     pdb_name = self.pdb_name, 
                                     max_metal_p = self.max_metal_p,
+                                    threshold=self.threshold,
                                     device=self.device)
         
         individual.add_fitness({'pmetal': pmetal})
