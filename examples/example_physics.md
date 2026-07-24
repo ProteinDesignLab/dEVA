@@ -8,8 +8,8 @@ have no such database behind them. This example demos two objectives that don't
 need one: a Coulomb sum closed with a QM-derived expansion, and a textbook Born
 term. Both plug into dEVA as ordinary objectives. 
 
-NOTE: Neither objectives modeled here are benchmarked or validated experimentally, so treat the numbers as a protoype computaitonal example demonstrating what potential physics-based terms could enable. However, we do our best to walk
-through the logic of what is presented her.
+NOTE: Neither physics-based objectives are benchmarked or validated experimentally, so treat the numbers as a protoype example demonstrating what potential physics-based terms could enable. However, we do our best to walk
+through the logic of what is presented here.
 
 ---
 
