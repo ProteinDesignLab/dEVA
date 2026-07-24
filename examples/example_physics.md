@@ -56,16 +56,16 @@ python run.py --config configs/retroaldolase_ef.yml \
 - **red star** — RA95, the starting scaffold
 - **blue diamond** — RA95.5-8F, what 19 rounds of directed evolution produced
 
-| design  | p(seq) | barrier reduction | −desolvation |
-|---|:---:|:---:|:---:|:---:|
+| name | p(seq) | barrier reduction | −desolvation |
+|---|:---:|:---:|:---:|
 | **RA95** (4PA8) | 0.473 | −11.26 | −46.4 |
-| **RA95.5-8F** (5AN7) | — | 0.471 | +11.12 | −121.5 |
-| D1| 0.450 | +13.41 ± 0.16 | −263.1 ± 4.9 |
-| D2 | 0.445 | +12.70 ± 0.10 | −193.6 ± 2.9 |
-| D3 | 0.446 | +11.13 ± 0.35 | −83.7 ± 3.4 |
-| D4 | 0.457 | +6.80 ± 0.43 | −67.1 ± 2.5 |
-| D5 | 0.465 | −1.17 ± 0.29 | −63.5 ± 0.5 |
-| D6 | 0.467 | −17.11 ± 0.17 | −50.4 ± 1.1 |
+| **RA95.5-8F** (5AN7) | 0.471 | +11.12 | −121.5 |
+| D1 | 0.450 | +13.41 | −263.1 | +17 |
+| D2 | 0.445 | +12.70 | −193.6 | +18 |
+| D3 | 0.446 | +11.13 | −83.7 | +8 |
+| D4 | 0.457 | +6.80 | −67.1 | +4 |
+| D5 | 0.465 | −1.17 | −63.5 | −2 |
+| D6 | 0.467 | −17.11 | −50.4 | −3 |
 
 The starting scaffold has a field that *opposes* the reaction. Via directed
 evolution flipped, the electric field was flipped. With this insight, dEVA finds designs that flip it too: gains in 
