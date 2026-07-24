@@ -15,7 +15,7 @@ through the logic of what is presented her.
 
 ## Why this enzyme
 
-![Hunt et al.](https://doi.org/10.1021/jacs.5c05134) (*JACS* 2025, 147, 30723) builds on the de novo retro-aldolase RA95. 
+[Hunt et al.](https://doi.org/10.1021/jacs.5c05134) (*JACS* 2025, 147, 30723) builds on the de novo retro-aldolase RA95. 
 In their work, they took the final evolved variant, RA95.5-8F,
 and split its 22 mutations into two proteins: **RA95-Core** which keeps only the 12
 active-site mutations, and **RA95-Shell** which keeps only the 10 distal ones.
