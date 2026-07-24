@@ -1,8 +1,11 @@
 # Examples
 
-Two worked examples of adding objectives to dEVA. Both are prototypes — neither
-is benchmarked or experimentally validated.
+Worked examples of adding objectives to dEVA to demonstrate the depth and breadth of possible objective functions. 
 
+We note that none of the objectives need be differentiable! Any method that returns a numerical score can be used as an objective. Methods can use either the sequence or structural information, or both!
+
+These are all prototypes — neither is benchmarked or experimentally validated. Success is dependent on the biochemical
+or biophysical intution that goes into the objectives. 
 **[Physics-based terms](example_physics.md)** — electric field and desolvation objectives physics-based objectives
 applied to the de novo retro-aldolase RA95. Two objectives with no training data behind
 them: a Coulomb sum closed with a QM expansion, and a Born term. 
