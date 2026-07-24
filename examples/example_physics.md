@@ -16,29 +16,13 @@ through the logic of what is presented her.
 ## Why this enzyme
 
 [Hunt et al.](https://doi.org/10.1021/jacs.5c05134) (*JACS* 2025, 147, 30723) builds on the de novo retro-aldolase RA95. 
-In their work, they took the final evolved variant, RA95.5-8F,
-and split its 22 mutations into two proteins: **RA95-Core** which keeps only the 12
-active-site mutations, and **RA95-Shell** which keeps only the 10 distal ones.
 
-Things to know about what they learned: 
+**They found that catalysis depended on the electrostatics and its direction.** The
+field magnitude at the catalytic center was comparable across each variant, but the *orientation* was not. The
+field along the charge separation of the C–C cleavage transition state drops the
+barrier drops, but elsewhere it doesn't.
 
-**The active site is not the whole story.** RA95-Core and RA95.5-8F have
-*identical* active-site residues, and RA95.5-8F is still 14-fold faster in
-k<sub>cat</sub>. Whatever the extra 10 distal mutations are doing, they are
-doing it without touching a catalytic residue. Design methods that score only
-the first shell are, by construction, blind to it.
-
-**Catalysis depended on the electrostatics and its direction.** The
-field magnitude at the catalytic center was comparable across every variant and
-conformational state the authors looked at. The *orientation* was not. Point the
-field along the charge separation of the C–C cleavage transition state and the
-barrier drops; point it elsewhere and it doesn't. Their Field-dependent energy 
-barrier (FDB) analysis puts the gap between RA95-Core and RA95.5-8F at 1.5–5 kcal/mol 
-from orientation alone. The quantity optimized for is a projection.
-
-**Evolution did not get there by stacking charge.** The distal mutations
-introduce a net surface charge change of −4 — three arginines replaced with
-neutral residues, plus one new aspartate. 
+Here we build this electrostatics/directionality as a physics-based term, and add a desolvation penalty to steer the design starting from the pre-evolved scaffold. 
 
 ---
 
