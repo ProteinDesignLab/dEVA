@@ -49,51 +49,7 @@ neutral residues, plus one new aspartate.
   chemical step *(Coulomb sum + FDB expansion)*
 - **desolvation** — the energetic price of burying charged residues *(Born)*
 
-### electric field
-
-The field at a probe point in the active site is the Coulomb sum over every
-partial charge in the protein (Hunt et al. eq 6). The barrier responds to it
-through the field-dependent expansion (their eq 7):
-
-```
-dE‡(F) = dE‡(0) − dMu·F − ½ F·dAlpha·F − ⅙ dBeta F³
-```
-
-where dMu, dAlpha and dBeta are reactant → TS differences from QM on the
-theozyme. Fitness is the **barrier reduction** in kcal/mol, so **higher is
-better**. Given the two QM structures, it locates the breaking bond, puts
-the probe at its midpoint, takes the axis along it, and superposes the whole
-thing onto the scaffold. Nothing to paste in by hand. Catalytic residues that
-live inside the QM model are excluded from the Coulomb sum, as in the paper.
-
-### desolvation
-
-Optimizing −dMu·F alone is unbounded. The cheapest way to strengthen a field at
-a fixed point is to park formal charges near it, which is free in a fixed-charge
-Coulomb sum and ruinous in a real protein. Directed evolution went the other
-way, by −4.
-
-So the field term gets a counterweight. Moving a charge from water into a
-low-dielectric interior costs Born energy:
-
-```
-dG = (q²/2R)(1/eps_p − 1/eps_w)
-```
-
-At q = 1 e, R = 2.5 Å, eps_p = 4, eps_w = 80 that's ~15 kcal/mol for a fully
-buried uncompensated charge — the literature range. The prefactor is anchored in
-theory, not fitted; if you want to change it, change the dielectric or the Born
-radius, not the scale. Salt bridges are credited, so the penalty tracks the
-*local net* charge rather than each charge separately. Fitness is the negative
-total cost, in kcal/mol, so **higher is better** and it sits on the same energy
-scale as the field term.
-
-Because, they are meant to pull against each other, an ideal solution optimizes them jointly. A
-weighted sum would bury the trade-off in a constant.
-
-We note that the field in principle optimizes along  you the chemical step.** In RA95.5-8F the distal
-mutations raise k<sub>3</sub> 100-fold and k<sub>4</sub> only 4-fold, which moves the bottleneck to product release. Past this point, further barrier reduction stops showing up in k<sub>cat</sub>. Nothing here models product release, active-site opening, or the ~15 °C of destabilization that the optimized active site costs.
-
+For more information on how each of these objectives are formulated, check the end of this file.
 
 ## The run
 
@@ -121,10 +77,53 @@ python run.py --config configs/retroaldolase_ef.yml \
 | **RA95** (4PA8) | 0.473 | −11.26 | −46.4 |
 | **RA95.5-8F** (5AN7) | 0.471 | +11.12 | −121.5 |
 
-The starting scaffold has a field that *opposes* the reaction. Directed
-evolution flipped it. dEVA finds designs that flip it too: every gain in 
-field is paid for in buried charge.
+The starting scaffold has a field that *opposes* the reaction. Via directed
+evolution flipped, the electric field was flipped. With this insight, dEVA finds designs that flip it too: gains in 
+field are paid for in buried charge.
+
 ---
+
+## The two physics-based terms
+
+### electric field
+
+The field at a probe point in the active site is the Coulomb sum over every
+partial charge in the protein (Hunt et al. eq 6). The barrier responds to it
+through the field-dependent expansion (their eq 7):
+
+```
+dE‡(F) = dE‡(0) − dMu·F − ½ F·dAlpha·F − ⅙ dBeta F³
+```
+
+where dMu, dAlpha and dBeta are reactant → TS differences from QM on the
+theozyme. Fitness is the **barrier reduction** in kcal/mol, so **higher is
+better**. Given the two QM structures, it locates the breaking bond, puts
+the probe at its midpoint, takes the axis along it, and superposes the whole
+thing onto the scaffold. Nothing to paste in by hand. Catalytic residues that
+live inside the QM model are excluded from the Coulomb sum, as in the paper.
+
+### desolvation
+
+Optimizing −dMu·F alone is unbounded. The cheapest way to strengthen a field at
+a fixed point is to park formal charges near it, which is free in a fixed-charge
+Coulomb sum and ruinous in a real protein. Directed evolution went the other though, 
+suggesting that the field needs a counterweight that accounts for desolvation.
+
+Moving a charge from water into a low-dielectric interior costs Born energy:
+
+```
+dG = (q²/2R)(1/eps_p − 1/eps_w)
+```
+
+At q = 1 e, R = 2.5 Å, eps_p = 4, eps_w = 80 that's ~15 kcal/mol for a fully
+buried uncompensated charge, or in other words the literature range. The prefactor is anchored in
+theory; if you want to change it, change the dielectric or the Born radius. Salt bridges are credited, so the penalty tracks the
+*local net* charge rather than each charge separately. Fitness is the negative
+total cost, in kcal/mol, so higher is better and it sits on the same energy
+scale as the field term.
+
+Because, they are meant to pull against each other, an ideal solution optimizes them jointly. A
+weighted sum would bury the trade-off in a constant.
 
 ## Files
 
@@ -134,3 +133,4 @@ field is paid for in buried charge.
 | `desolvation.py` | the buried-charge penalty |
 | `theozyme_axis.py` | derive the reaction axis from QM structures |
 ---
+
