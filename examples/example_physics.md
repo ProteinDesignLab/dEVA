@@ -54,12 +54,10 @@ python run.py --config configs/retroaldolase_ef.yml \
 - **gray** — all designs
 - **black** — the Pareto front
 - **red star** — RA95, the starting scaffold
-- **blue diamond** — RA95.5-8F, what 19 rounds of directed evolution produced
 
 | name | p(seq) | barrier reduction | −desolvation |
 |---|:---:|:---:|:---:|
 | **RA95** (4PA8) | 0.473 | −11.26 | −46.4 |
-| **RA95.5-8F** (5AN7) | 0.471 | +11.12 | −121.5 |
 | D1 | 0.450 | +13.41 | −263.1 | +17 |
 | D2 | 0.445 | +12.70 | −193.6 | +18 |
 | D3 | 0.446 | +11.13 | −83.7 | +8 |
