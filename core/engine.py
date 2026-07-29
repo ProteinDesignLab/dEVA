@@ -12,6 +12,7 @@ import sampler
 from common.utils import ensure_dir
 from evolve.problem import Problem
 from evolve.evolution import Evolution
+from evolve.recovery import recover_run, needs_recovery
 
 logger = logging.getLogger("evolution")
 logger.setLevel(logging.DEBUG)
@@ -75,11 +76,34 @@ class EvolutionEngine:
             assert os.path.isfile(pdb) and os.path.getsize(pdb) > 0, 'pdb not found'
         return pdb, pdb_name
 
-    def save_statistics(self, evo_out: tuple):
+    def save_statistics(self, evo_out: dict):
+        """Pickle best/fronts/statistics, recovering any empty entry from checkpoints.
+
+        evolve() builds these in memory and returns them only at the end, so a
+        run that never entered the generation loop (e.g. resumed from a
+        checkpoint already at n_generations) returns empty lists. Rather than
+        writing those out -- and clobbering good data from an earlier run --
+        rebuild them from the pareto_front_gen*.pkl checkpoints on disk.
+        """
         save = os.path.join(self.out_folder, f'{self.pdb_name}_s{self.seed}.pkl')
-        
+
+        n_gen = getattr(self.evolution, 'n_generations', None) if hasattr(self, 'evolution') else None
+        if needs_recovery(self.out_folder, evo_out, n_generations=n_gen):
+            bad = [k for k, v in evo_out.items() if not v] or ['(partial)']
+            logger.warning('incomplete evolution outputs %s; attempting recovery from '
+                           'checkpoints in %s', bad, self.out_folder)
+            evo_out, notes = recover_run(self.out_folder, evo_out, n_generations=n_gen)
+            for n in notes:
+                logger.warning('  %s', n)
+
         for key, value in evo_out.items():
             f_name = save.replace('.pkl', f'_{key}.pkl')
+            if not value:
+                if os.path.exists(f_name) and os.path.getsize(f_name) > 16:
+                    logger.warning('refusing to overwrite %s with empty %s',
+                                   os.path.basename(f_name), key)
+                    continue
+                logger.warning('%s is empty and could not be recovered', key)
             with open(f_name,  "wb") as f:
                 pickle.dump(value, f)
 
