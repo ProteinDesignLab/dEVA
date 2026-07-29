@@ -1,0 +1,17 @@
+python project_retroaldolase/prepare_deva.py \
+  --scaffold inputs/4A29_scaffold.pdb \
+  --theozyme-spec project_retroaldolase/theozyme_RA95_spec.json \
+  --name ra95_barrel \
+  --anchors 48-52,79-83,107-110,129-133,157-160,176-180,206-211,229-232 \
+  --barrel-shell 13 \
+  --mobile 52-66,180-190 \
+  --delta-mu=-0.3111,-4.3508,5.2337 \
+  --reactant-xyz project_retroaldolase/Reactant_Oriented.txt \
+  --chi-step 4.0 \
+  --max-cb-dev 2.2 \
+  --build-max 20 \
+  --top 10 \
+  --protpardelle \
+  --n-protpardelle-attempts 5 \
+  --protpardelle-steps 24 \
+  --noise-angstrom 0.4

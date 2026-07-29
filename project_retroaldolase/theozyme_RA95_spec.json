@@ -1,0 +1,22 @@
+{
+  "name": "RA95 retro-aldolase, retro-aldol C-C cleavage TS",
+  "xyz": "project_retroaldolase/Transition_State_Oriented.txt",
+  "residues": [
+    {"role": "anchor", "resn": "LYS",
+     "atoms": {"CB": 1, "CG": 2, "CD": 3, "CE": 4, "NZ": 5},
+     "covalent_to_ligand": {"atom": "NZ", "ligand_atom": "C13", "order": "double"}},
+    {"role": "satellite", "resn": "TYR",
+     "atoms": {"CB": 63, "CG": 60, "CD1": 56, "CD2": 58,
+               "CE1": 54, "CE2": 55, "CZ": 53, "OH": 52}}
+  ],
+  "ligand": {
+    "resn": "LIG",
+    "atoms": {"C14":14,"C13":15,"C12":16,"C11":17,"O11":18,"C2":19,"C1":20,"C9":21,
+              "C8":22,"C7":23,"C6":24,"O6":25,"C15":26,"C5":27,"C10":28,"C4":29,"C3":30},
+    "bonds": [["C14","C13"],["C13","C12"],["C11","O11"],["C11","C2"],["C2","C1"],
+              ["C2","C3"],["C1","C9"],["C9","C8"],["C9","C10"],["C8","C7"],["C7","C6"],
+              ["C6","O6"],["C6","C5"],["O6","C15"],["C5","C10"],["C10","C4"],["C4","C3"]],
+    "partial_bonds": [["C12","C11"]]
+  },
+  "waters": [{"O": 48}]
+}
