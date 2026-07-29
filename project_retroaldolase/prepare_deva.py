@@ -829,6 +829,7 @@ models:
     align_window: 8
     n_protpardelle_attempts: {n_pp}
     require_protpardelle: false
+    rescore_pmpnn_after: true
     clearance: 3.40
     shell: 15.0
     max_backbone_disp: 2.0
@@ -837,13 +838,13 @@ models:
     k_closure: 60.0
     k_rep: 25.0
     maxiter: 300
-    emit_objective: true
+    emit_objective: false
     w_strain: 0.5
     free_rmsd: 1.0
     fail_value: -10.0
     accept_tol: 0.05
     out_subdir: relaxed
-    verbose: true
+    verbose: false
 
   desolvation:
     verbose: true
@@ -854,7 +855,7 @@ models:
     include_hetatm: false
     fix_incomplete: true
     report_au: false
-    verbose: true
+    verbose: false
 
   pocket_shape:
     ligand_pdb: inputs/ra95/{tag}_ligand.pdb
@@ -862,7 +863,7 @@ models:
     r_clash: 1.2
     w_clash: 1.0
     w_seal: 0.0
-    verbose: true
+    verbose: false
 
   ligandmpnn:
     model_path: ./models/ligandmpnn/model_params/ligandmpnn_v_32_020_25.pt
