@@ -142,6 +142,33 @@ class MPNNModel(BaseModel):
         torch.cuda.empty_cache()
         gc.collect()
 
+    def rescore(self, individual: Individual):
+        """Score the individual's current sequence on its current PDB (no mutate/pack).
+
+        Overwrites fitness['pmpnn']. Used after protpardelle_relax so pmpnn reflects
+        sequence fit to the post-relax backbone that EF/pocket/desolv also see.
+        """
+        protein_dict, _, _, icodes, _ = parse_PDB(
+            individual.name,
+            device=self.device,
+            chains=self.parse_these_chains_only_list,
+            parse_all_atoms=True,
+            parse_atoms_with_zero_occupancy=0)
+
+        protein_dict, feature_dict = prepare_ligandmpnn(
+            self.model_config, protein_dict, icodes,
+            self.design_params, self.atom_context_num, self.device)
+        feature_dict["mask"] = self.feature_dict['mask']
+        feature_dict['S'] = individual.sequence_.to(self.device)
+
+        score_dict = self.model.score(feature_dict, use_sequence=1)
+        overall_probs = self.get_probs(
+            score_dict, protein_dict, individual.sequence_, overall=True)
+        individual.update_fitness({'pmpnn': float(np.mean(overall_probs))})
+
+        torch.cuda.empty_cache()
+        gc.collect()
+
     def get_probs(self, score_dict, protein_dict, sequence, overall=False):
         probs_2d = torch.exp(score_dict["log_probs"]).mean(dim=0)
         temp_seq = sequence.squeeze()

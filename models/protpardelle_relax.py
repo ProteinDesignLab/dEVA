@@ -113,11 +113,17 @@ class ProtpardelleRelaxModel(BaseModel):
         self.w_strain = float(cfg.get('w_strain', 0.5))
         self.free_rmsd = float(cfg.get('free_rmsd', 1.0))
         self.fail_value = float(cfg.get('fail_value', -10.0))
+        # After rewriting individual.name, Sampler re-scores LigandMPNN on the
+        # relaxed PDB (same sequence) so fitness['pmpnn'] matches the backbone
+        # EF/pocket/desolv see. Absolute pmpnn typically drops; Pareto becomes
+        # "seq fit to final BB". Set false to keep the pre-relax designer score.
+        self.rescore_pmpnn_after = bool(cfg.get('rescore_pmpnn_after', True))
 
         logger.info(f'[protpardelle_relax] backend={backend} '
                     f'mode={self.pipeline.mode} '
                     f'theozyme={self.pipeline.theozyme_resis} '
-                    f'ligand={self.pipeline.rigid.lig_key}')
+                    f'ligand={self.pipeline.rigid.lig_key} '
+                    f'rescore_pmpnn_after={self.rescore_pmpnn_after}')
         if self.verbose:
             print(self.pipeline.rigid.summary(), flush=True)
         self._check_seq_model_agrees(config, theozyme_resis)
