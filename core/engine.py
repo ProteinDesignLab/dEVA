@@ -83,7 +83,7 @@ class EvolutionEngine:
             with open(f_name,  "wb") as f:
                 pickle.dump(value, f)
 
-        logger.info('EVOLVE outputs saved!')
+        logger.info('dEVA outputs saved!')
 
     def set_seed(self):
         np.random.seed(self.seed)

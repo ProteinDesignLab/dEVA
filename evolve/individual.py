@@ -63,7 +63,7 @@ class Individual(object):
             header_lines.append(f"REMARK 220 REMARK: {key} = {value}")
         
         header_lines.append(f"REMARK 220 REMARK: sequence = {self.sequence}")
-        header_lines.append("REMARK 220 VERSION EVOLVE-LigandMPNN-Metal3D-GINA")
+        header_lines.append("REMARK 220 dEVA-generated design")
         
         header = "\n".join(header_lines) + "\n"
         
