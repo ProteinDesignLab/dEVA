@@ -12,14 +12,17 @@ logger.setLevel(logging.DEBUG)
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
 os.environ["PYTORCH_KERNEL_CACHE_PATH"] = "/scratch/users/gelnesr/.cache/pytorch_kernels"
 
+_p = logging.getLogger("propka")
+_p.setLevel(logging.CRITICAL)
+_p.propagate = False
+_p.handlers = [logging.NullHandler()]
+
 def main(args):
     engine = EvolutionEngine(config=args.config, pdb=args.pdb, out_folder=args.out_folder)
     config = engine.get_config()
 
     # import all models here
     import models.mpnn_model
-    import models.metal3d_model
-    import models.plip_score
     
     pdb = engine.get_pdb_name()
     logger.info(f'Designing protein from {pdb}')
@@ -33,7 +36,7 @@ def main(args):
 if __name__ == "__main__": 
     p = argparse.ArgumentParser(description="EVOLVE - a modulear multi-objective protein design platform)")
     p.add_argument('--config', default="configs/evolution.yml", type=str) 
-    p.add_argument("--models", nargs="+", default=["seq_model", "metal3d_model", "plip_score"], help="List of registered model specs. Sequence model first, the remaining models/objectives are evaluated in the order provided")
+    p.add_argument("--models", nargs="+", default=["seq_model", "metal3d_model"], help="List of registered model specs. Sequence model first, the remaining models/objectives are evaluated in the order provided")
     p.add_argument("--pdb", type=str, default=None)
     p.add_argument("--out_folder", type=str, default=None)
     args = p.parse_args()
