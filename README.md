@@ -39,14 +39,7 @@ python run.py -c configs/your_run.yml \
 
 ## Examples
 
-Full list: [`examples/README.md`](examples/README.md).
-
-**From the paper**
-
-- [Metal3D / Metal3D-Cat](examples/example_metal3d.md) — p(metal), catalytic or general
-- [A substrate-aware score](examples/example_substrate.md) — pocket shape next to sequence and Metal3D-Cat
-
-**Other examples can be found at [`examples/README.md`](examples/README.md).**
+A full list of examples can be found at [`examples/README.md`](examples/README.md).
 
 ---
 
@@ -57,10 +50,10 @@ These are other possible additions to the dEVA design loop.
 | example functionality | what it is | where |
 |----------------------|------------|-------|
 | **Theozyme placement** | Seat a QM geometry in a scaffold before you evolve | [`examples/example_theozyme_placement.md`](examples/example_theozyme_placement.md) |
-| **relax** | Move nearby backbone. Not a score. If you use it, keep it second in `--models` | [`examples/example_relax.md`](examples/example_relax.md) |
-| **Physics terms** | Ex. electric field and desolvation as ordinary objectives | [`examples/example_physics.md`](examples/example_physics.md) |
+| **Flexible backbone** | Move nearby backbone during design. | [`examples/example_relax.md`](examples/example_relax.md) |
+| **Physics terms** | Ex. electric field, desolvation, etc. | [`examples/example_physics.md`](examples/example_physics.md) |
 | **Geometric terms** | Ex. geometric enclosure of a fixed ligand pose | [`examples/example_substrate.md`](examples/example_substrate.md) |
-| **Predictive scores** | Apo pKa of one lysine (PROPKA + a window) | [`examples/example_pka.md`](examples/example_pka.md) |
+| **Predictive scores** | Ex. apo pKa of one lysine (PROPKA3) | [`examples/example_pka.md`](examples/example_pka.md) |
 
 ---
 
