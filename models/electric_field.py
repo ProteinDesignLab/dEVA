@@ -11,13 +11,13 @@ J. Am. Chem. Soc. 2025, 147, 30723-30736 (retro-aldolase RA95):
          F(r0) = SUM_i  (1/4*pi*eps0) * q_i * (r0 - r_i) / |r0 - r_i|^3
 
   2. The barrier for the chemical step is modulated by that field through
-     the field-dependent energy barrier (FDB) expansion (their eq 7):
+     the field-dependent energy barrier (FDB) expansion (their eq 7).
+     This objective uses the dipole term only:
 
-         dE!(F) = dE!(0) - dMu . F - 1/2 F.dAlpha.F - 1/6 dBeta F^3
+         dE!(F) ≈ dE!(0) - dMu . F
 
-     where dMu / dAlpha / dBeta are the reactant -> TS differences in dipole,
-     polarizability and first hyperpolarizability, taken from QM on the
-     theozyme model.
+     where dMu is the reactant -> TS dipole difference from QM on the
+     theozyme. Higher-order polarizability terms are ignored.
 
   The fitness reported is the BARRIER REDUCTION in kcal/mol,
   -(dE!(F) - dE!(0)), so higher is better, consistent with dEVA convention.
@@ -42,6 +42,9 @@ IMPORTANT CAVEATS
     result as a preorganization proxy.
   * No electronic polarization: a fixed-charge field will systematically
     overestimate |F| in a low-dielectric pocket.
+  * Only the dipole term of eq 7 is used. delta_alpha / delta_beta are
+    accepted for forward compatibility but ignored (their unit conversion
+    is not defined for the MV/cm field used here).
 """
 
 import os
@@ -203,6 +206,34 @@ _Q_UNITED = _build_united(_Q)
 FORMAL = {"ASP": -1.0, "GLU": -1.0, "LYS": 1.0, "ARG": 1.0}
 
 
+def _normalize_exclude(exclude_keys):
+    """Accept 'A210', 'A:210', or '210' and expand to all match forms."""
+    out = set()
+    for x in exclude_keys:
+        s = str(x).strip()
+        if not s:
+            continue
+        out.add(s)
+        if ':' in s:
+            chain, resi = s.split(':', 1)
+            out.add(f'{chain}{resi}')
+            out.add(resi)
+            out.add(f'{chain}:{resi}')
+        else:
+            # 'A210' or bare '210'
+            i = 0
+            while i < len(s) and s[i].isalpha():
+                i += 1
+            if i and i < len(s) and s[i:].lstrip('-').isdigit():
+                chain, resi = s[:i], s[i:]
+                out.add(f'{chain}:{resi}')
+                out.add(resi)
+                out.add(f'{chain}{resi}')
+            elif s.lstrip('-').isdigit():
+                out.add(s)
+    return out
+
+
 def parse_pdb_charged(pdb_path, charges, exclude_keys=(),
                       include_hetatm=False, skip_water=True,
                       fix_incomplete=True, tol=0.05, warn=None):
@@ -219,7 +250,7 @@ def parse_pdb_charged(pdb_path, charges, exclude_keys=(),
         the deficit over the atoms that are present, which keeps the
         monopole exact at the cost of a small local dipole distortion.
     """
-    exclude = set(exclude_keys)
+    exclude = _normalize_exclude(exclude_keys)
     residues = {}   # key -> [resname, [xyz...], [q...]]
     has_h = False
 
@@ -235,7 +266,8 @@ def parse_pdb_charged(pdb_path, charges, exclude_keys=(),
         if skip_water and resn in ("HOH", "WAT", "TIP3"):
             continue
         chain, resi = line[21], line[22:27].strip()
-        if f"{chain}:{resi}" in exclude or resi in exclude:
+        if (f"{chain}:{resi}" in exclude or f"{chain}{resi}" in exclude
+                or resi in exclude):
             continue
         atom = line[12:16].strip()
         if (line[76:78].strip().upper() or atom[:1]).upper() == "H":
@@ -443,9 +475,13 @@ class ElectricField(BaseModel):
             self.dmu = float(dmu) * self.axis
         else:
             self.dmu = np.asarray(dmu, dtype=np.float64)
-        # isotropic higher-order terms, optional
-        self.dalpha = float(mc.get("delta_alpha", 0.0))   # in A^3
-        self.dbeta = float(mc.get("delta_beta", 0.0))     # a.u.
+        # isotropic higher-order FDB terms are not applied (see module docstring)
+        self.dalpha = float(mc.get("delta_alpha", 0.0))
+        self.dbeta = float(mc.get("delta_beta", 0.0))
+        if self.dalpha or self.dbeta:
+            print("[electric_field] WARNING: delta_alpha/delta_beta are ignored; "
+                  "only the dipole term of the FDB expansion is scored.",
+                  file=sys.stderr)
 
         # ---- charges -----------------------------------------------------
         cf = mc.get("charge_file", None)
@@ -527,11 +563,10 @@ class ElectricField(BaseModel):
         return table
 
     def _field(self, xyz, q):
-        """Coulomb sum -> field vector at the probe, in MV/cm."""
-        d = self.probe - xyz                       # (N,3), points from charge to probe
+        """Vacuum Coulomb field at self.probe, Hunt et al. eq 6, in MV/cm."""
+        d = self.probe - xyz
         r2 = (d * d).sum(1)
         r = np.sqrt(r2)
-        # guard against a charge sitting exactly on the probe
         ok = r > 1e-6
         w = (q[ok] / (r2[ok] * r[ok]))[:, None]
         return COULOMB_MV_CM * (d[ok] * w).sum(0)
@@ -547,12 +582,8 @@ class ElectricField(BaseModel):
         Fproj = float(F @ self.axis)
 
         if self.dmu is not None:
-            # FDB, eq 7. dE! lowered when the field aligns with dMu.
+            # Dipole term of FDB eq 7 only. Barrier drops when F aligns with dMu.
             ddE = -(self.dmu @ F) * D_MVCM_TO_KCAL
-            if self.dalpha:
-                ddE -= 0.5 * self.dalpha * Fproj ** 2 * D_MVCM_TO_KCAL
-            if self.dbeta:
-                ddE -= (1.0 / 6.0) * self.dbeta * Fproj ** 3 * D_MVCM_TO_KCAL
             fitness = -ddE                        # barrier reduction, kcal/mol
         else:
             fitness = Fproj * (AU_PER_MVCM if self.report_au else 1.0)

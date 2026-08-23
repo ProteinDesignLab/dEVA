@@ -314,7 +314,9 @@ def write_full_PDB(
     R_idx: protein residue indices shape=[length]
     chain_letters: protein chain letters shape=[length]
     S : protein amino acid sequence shape=[length]
-    other_atoms: other atoms parsed by prody (not used in BioPython version)
+    other_atoms: non-protein atoms (ligand, metals, cofactors) from parse_PDB.
+                 If given, they are re-attached as HETATM records so the packed
+                 structure carries the original ligand. Waters are always skipped.
     icodes: a list of insertion codes for the PDB; e.g. antibody loops
     """
     from Bio.PDB import StructureBuilder, PDBIO, Atom, Residue, Chain, Model, Structure
@@ -370,6 +372,43 @@ def write_full_PDB(
                 atom = Atom.Atom(atom_name, coord, bfac, 1.0, " ", atom_name, j, element=atom_name[0])
                 residue.add(atom)
         chain.add(residue)
+
+    # --- re-attach the original non-protein atoms as HETATM, if requested ------
+    if other_atoms:
+        het_res = {}
+        for atom in other_atoms:
+            src_res = atom.get_parent()
+            resname = src_res.get_resname()
+            if resname in ("HOH", "WAT"):
+                continue
+            ch_id = src_res.get_parent().id
+            if ch_id in chain_dict:
+                chain = chain_dict[ch_id]
+            else:
+                chain = Chain.Chain(ch_id)
+                model.add(chain)
+                chain_dict[ch_id] = chain
+            res_id = ("H_%s" % resname, src_res.id[1], src_res.id[2])
+            key = (ch_id, res_id)
+            if key in het_res:
+                residue = het_res[key]
+            else:
+                residue = Residue.Residue(res_id, resname, " ")
+                chain.add(residue)
+                het_res[key] = residue
+            residue.add(
+                Atom.Atom(
+                    atom.get_name(),
+                    atom.coord,
+                    atom.get_bfactor(),
+                    atom.get_occupancy(),
+                    " ",
+                    atom.get_name(),
+                    atom.get_serial_number(),
+                    element=atom.element,
+                )
+            )
+
     io = PDBIO()
     io.set_structure(structure)
     io.save(save_path)

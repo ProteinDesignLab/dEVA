@@ -1,124 +1,97 @@
-# dEVA with physics-based terms
+# Using dEVA for theozyme-based design
 
-**Two objectives that come from physics rather than from data.**
+**You do not need a training set to add an objective to dEVA.** If you can
+compute a number from a structure, you can optimize it.
 
-The metalloenzyme objective in the dEVA paper needed a curated database of 2,177
-zinc sites, of which only 285 were catalytic. Plenty of things worth optimizing
-have no such database behind them. This example demos two objectives that don't
-need one: a Coulomb sum closed with a QM-derived expansion, and a textbook Born
-term. Both plug into dEVA as ordinary objectives. 
+This example starts from the theozyme computed in for the de novo retro-aldolase **RA95** in ([Hunt et al., *JACS* 2025](https://doi.org/10.1021/jacs.5c05134)).
 
-NOTE: Neither physics-based objectives are benchmarked or validated experimentally, so treat the numbers as a protoype example demonstrating what potential physics-based terms could enable. However, we do our best to walk
-through the logic of what is presented here.
+Hunt et al. made variants of the evolved RA95.5-8F and experimentally measured their kinetics. The active ones were geometrically preorganized, but more importantly their electric field pointed along the charge separation of the C–C cleavage transition state.
 
----
+We turn that idea into ordinary dEVA scores. No curated dataset needed! In this example, we generate two physics based terms, one geometric term, and and a sequence term to optimize the theozyme in a barrel scaffold.
 
-## Why this enzyme
-
-[Hunt et al.](https://doi.org/10.1021/jacs.5c05134) (*JACS* 2025, 147, 30723) builds on the de novo retro-aldolase RA95. 
-
-**They found that catalysis depended on the electrostatics and its direction.** The
-field magnitude at the catalytic center was comparable across each variant, but the *orientation* was not. The
-field along the charge separation of the C–C cleavage transition state drops the
-barrier drops, but elsewhere it doesn't.
-
-Here we build this electrostatics/directionality as a physics-based term, and add a desolvation penalty to steer the design starting from the pre-evolved scaffold. 
+> These physics terms are prototype approximations! They may not be the best way to capture the physics of the theozyme.
 
 ---
 
-## The three objectives
+## What we optimize
 
-- **p(seq)** — how likely the sequence is, given the backbone *(LigandMPNN)*
-- **electric field** — how much the protein's field lowers the barrier for the
-  chemical step *(Coulomb sum + FDB expansion)*
-- **desolvation** — the energetic price of burying charged residues *(Born)*
+Higher is better for every score.
 
-For more information on how each of these objectives are formulated, check the end of this file.
+| score | plain English |
+|---|---|
+| **p(seq)** | Does this sequence look like it belongs on this backbone? *(LigandMPNN)* |
+| **electric field** | Does the protein’s field point the right way, so it should *lower* the reaction barrier? *(Coulomb sum + QM dipole)* |
+| **pocket shape** | Does the pocket still fit the ligand pose? *(geometry)* |
+| **desolvation** | Did we bury a pile of unpaired charges to fake a strong field? *(Born)* |
 
-## The run
+`relax` is **optional** and is **not** a score. If you include it, keep it second in `--models`. Leave it out for a fixed backbone design. For more information on how the active site was positioned, see demo [`example_theozyme_placement.md`](example_theozyme_placement.md).
 
-Scaffold **4PA8**: the de novo retro-aldolase catalyzing C–C bond cleavage.
-Three objectives, 60 generations, 60 individuals, catalytic residues held fixed.
+Catalytic residues **A231** and **A108** stay fixed. For more information on how the active site was positioned, see demo [`example_theozyme_placement.md`](example_theozyme_placement.md).
+
+---
+
+## How to run it
+
+Scaffold: `inputs/ra95/ra95_barrel_rank1.pdb`. 60 generations, 30
+individuals, 3 mutations per child. Full settings:
+[`configs/ra95/ra95_barrel_rank1.yml`](../configs/ra95/ra95_barrel_rank1.yml).
 
 ```bash
-python run.py --config configs/retroaldolase_ef.yml \
-              --models seq_model electric_field desolvation
+python run.py -c configs/ra95_example.yml \
+  --models seq_model relax electric_field pocket_shape desolvation
 ```
 
 ---
 
-## The result
+## The process
 
-![Pareto front](images/pareto_retroaldolase.png)
+![dEVA pipeline](images/ra95_pipeline.png)
 
-- **gray** — all designs
-- **black** — the Pareto front
-- **red star** — RA95, the starting scaffold
+Three steps.
 
-| name | p(seq) | barrier reduction | −desolvation |
-|---|---|---|---|
-| **RA95 (4PA8)** | 0.473 | −11.26 | −46.4 |
-| D1 | 0.464 | +10.77 | −74.8 |
-| D2 | 0.467 | +10.13 | −93.9 |
-| D3 | 0.472 | +8.63 | −87.1 |
-| D4 | 0.471 | +5.78 | −36.7 |
-| D5 | 0.491 | +2.86 | −38.8 |
-| D6 | 0.491 | −0.79 | −41.6 |
+1. **Place the theozyme.** The QM reactant / TS pair (substrate + reactive lysine) is seated in a starting structure. That is a separate demo: [`example_theozyme_placement.md`](example_theozyme_placement.md). This example picks up after that, at `inputs/ra95/ra95_barrel_rank1.pdb`.
+2. **Pick the scores.** Anything that returns a number works as a score. Here we use    sequence likelihood, electric field, pocket shape, and a desolvation penalty. `relax` is optional and sits between design and scoring so those terms see a flexible backbone.
+3. **Design with dEVA.** Mutate, relax, score, keep the non-dominated set. 
 
-The starting scaffold has a field that *opposes* the reaction. Via directed
-evolution flipped, the electric field was flipped. With this insight, dEVA finds designs that flip it too: gains in 
-field are paid for in buried charge.
+The output is a designed catalytic motif in the barrel: lysine + transition state still posed, sequence and pocket allowed to change around them. The theozyme geometry remains fixed during design.
 
 ---
 
-## The two physics-based terms
+## Simple explanations of the physics terms
 
-### electric field
+### Electric field
 
-The field at a probe point in the active site is the Coulomb sum over every
-partial charge in the protein (Hunt et al. eq 6). The barrier responds to it
-through the field-dependent expansion (their eq 7):
+1. Put a probe at the midpoint of the breaking C–C bond (taken from the
+   QM reactant / TS pair in the config).
+2. Add up the Coulomb field from every partial charge in the protein.
+   Catalytic residues already in the QM model are left out, as in Hunt et
+   al.
+3. Project that field onto the reaction axis. Fitness is the estimated
+   **barrier reduction** in kcal/mol.
 
-```
-dE‡(F) = dE‡(0) − dMu·F − ½ F·dAlpha·F − ⅙ dBeta F³
-```
+If the field points with the charge movement, the barrier drops and the score goes up. If it points the other way, the score is negative.
 
-where dMu, dAlpha and dBeta are reactant → TS differences from QM on the
-theozyme. Fitness is the **barrier reduction** in kcal/mol, so **higher is
-better**. Given the two QM structures, it locates the breaking bond, puts
-the probe at its midpoint, takes the axis along it, and superposes the whole
-thing onto the scaffold. Nothing to paste in by hand. Catalytic residues that
-live inside the QM model are excluded from the Coulomb sum, as in the paper.
+### Desolvation
 
-### desolvation
+A Coulomb sum will reward parking formal charges next to the probe. That is free in the field term and expensive in a real protein.
 
-Optimizing −dMu·F alone is unbounded. The cheapest way to strengthen a field at
-a fixed point is to park formal charges near it, which is free in a fixed-charge
-Coulomb sum and ruinous in a real protein. Directed evolution went the other though, 
-suggesting that the field needs a counterweight that accounts for desolvation.
-
-Moving a charge from water into a low-dielectric interior costs Born energy:
+The counterweight is a Born cost for burying unpaired charge:
 
 ```
-dG = (q²/2R)(1/eps_p − 1/eps_w)
+dG = (q² / 2R) (1/eps_p − 1/eps_w)
 ```
 
-At q = 1 e, R = 2.5 Å, eps_p = 4, eps_w = 80 that's ~15 kcal/mol for a fully
-buried uncompensated charge, or in other words the literature range. The prefactor is anchored in
-theory; if you want to change it, change the dielectric or the Born radius. Salt bridges are credited, so the penalty tracks the
-*local net* charge rather than each charge separately. Fitness is the negative
-total cost, in kcal/mol, so higher is better and it sits on the same energy
-scale as the field term.
+The penalty tracks *local net* charge, not every ion separately. Fitness is **negative** that cost, so it sits on the same kcal/mol scale as the field term.
 
-Because, they are meant to pull against each other, an ideal solution optimizes them jointly. A
-weighted sum would bury the trade-off in a constant.
+---
 
 ## Files
 
-| file | what it is |
+| file | role |
 |---|---|
-| `electric_field.py` | the field objective |
-| `desolvation.py` | the buried-charge penalty |
-| `theozyme_axis.py` | derive the reaction axis from QM structures |
----
-
+| [`configs/ra95_example_.yml`](../configs/ra95_example_.yml) | this example’s run |
+| [`models/relax.py`](../models/relax.py) | backbone relax (not a score) |
+| [`models/electric_field.py`](../models/electric_field.py) | field / barrier-reduction score |
+| [`models/desolvation.py`](../models/desolvation.py) | buried-charge penalty |
+| [`models/pocket_shape.py`](../models/pocket_shape.py) | ligand-pocket geometry |
+| [`models/theozyme_axis.py`](../models/theozyme_axis.py) | reaction axis from the QM pair |

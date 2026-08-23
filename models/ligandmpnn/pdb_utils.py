@@ -49,38 +49,26 @@ def pack_sc(args, model, protein_dict, S, other_atoms, icodes, outfile, device="
         model,
         args.sc_num_denoising_steps,
         args.sc_num_samples,
-        args.repack_everything,
+        getattr(args, "repack_everything", 0),
     )
     model.cpu()
 
     X_list = sc_dict["X"][0]
     X_m_list = sc_dict["X_m"][0]
     b_factor_list = sc_dict["b_factors"][0]
-    if other_atoms: 
-        write_full_PDB(
-            outfile,
-            X_list.cpu().numpy(),
-            X_m_list.cpu().numpy(),
-            b_factor_list.detach().cpu().numpy(),
-            feature_dict_["R_idx_original"][0].cpu().numpy(),
-            protein_dict["chain_letters"],
-            S.squeeze().cpu().numpy(),
-            other_atoms=other_atoms,
-            icodes=icodes,
-            force_hetatm=1,
-        )
-    else:
-        write_full_PDB(
-            outfile,
-            X_list.cpu().numpy(),
-            X_m_list.cpu().numpy(),
-            b_factor_list.detach().cpu().numpy(),
-            feature_dict_["R_idx_original"][0].cpu().numpy(),
-            protein_dict["chain_letters"],
-            S.squeeze().cpu().numpy(),
-            icodes=icodes,
-            force_hetatm=1,
-        )
+
+    write_full_PDB(
+        outfile,
+        X_list.cpu().numpy(),
+        X_m_list.cpu().numpy(),
+        b_factor_list.detach().cpu().numpy(),
+        feature_dict_["R_idx_original"][0].cpu().numpy(),
+        protein_dict["chain_letters"],
+        S.squeeze().cpu().numpy(),
+        icodes=icodes,
+        force_hetatm=1,
+        other_atoms=other_atoms if getattr(args, "keep_ligand_in_packed", 0) else None,
+    )
 def add_header(filename, fitnesses: dict, sequence: str):
     """Write a standardized REMARK header with all fitness metrics."""
     # Dynamically build REMARK lines for every fitness key/value

@@ -97,7 +97,10 @@ class PocketShape(BaseModel):
         self.ligand = ligand
         self.n_ligand = len(ligand)
 
-        # Fixed-backbone design: the backbone occlusion term is constant
+        # Reference backbone occlusion. Kept for calibration and for the contact
+        # sanity check below, but NOT reused per individual: with a relaxation stage
+        # in the model list the backbone moves, and a cached value would describe the
+        # input structure rather than the one being scored. See get_components().
         _, backbone, _, _ = parse_pdb(self.config.input.pdb)
         if len(backbone) == 0:
             raise ValueError(f"No backbone atoms parsed from {self.config.input.pdb}")
@@ -160,7 +163,14 @@ class PocketShape(BaseModel):
         sidechain, backbone, _, _ = parse_pdb(pdb_path)
         protein = np.vstack([sidechain, backbone]) if len(sidechain) else backbone
 
-        occlusion = (self._occlusion(sidechain) + self.backbone_occ) / self.n_ligand
+        # Recomputed, not cached. Identical to self.backbone_occ when the backbone has
+        # not moved, so existing target_occ calibrations remain valid; correct when it
+        # has. Set pocket_shape.static_backbone: true to restore the old behaviour.
+        if getattr(self, "static_backbone", False):
+            backbone_occ = self.backbone_occ
+        else:
+            backbone_occ = self._occlusion(backbone)
+        occlusion = (self._occlusion(sidechain) + backbone_occ) / self.n_ligand
         overlap = self._overlap(sidechain) / self.n_ligand
         sealing = self._sealing(protein) if self.axis is not None else 0.0
 
