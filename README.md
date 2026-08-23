@@ -46,11 +46,7 @@ Full list: [`examples/README.md`](examples/README.md).
 - [Metal3D / Metal3D-Cat](examples/example_metal3d.md) — p(metal), catalytic or general
 - [A substrate-aware score](examples/example_substrate.md) — pocket shape next to sequence and Metal3D-Cat
 
-**Other examples of objectives**
-
-- [Place a theozyme](examples/example_theozyme_placement.md)
-- [Physics terms on a posed theozyme](examples/example_physics.md)
-- [A catalytic pKa score](examples/example_pka.md)
+**Other examples can be found at [`examples/README.md`](examples/README.md).**
 
 ---
 
