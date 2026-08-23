@@ -29,8 +29,7 @@ Metal3D and Metal3D-Cat use the same wrapper; to toggle between them, swap the c
 Each score is a small Python class (a **model**). It looks at the current design and returns one or more numbers. Higher is better. You name it and list that name on `--models`.
 
 ```bash
-python run.py -c configs/your_run.yml \
-  --models seq_model <optional relax> <your scores>
+python run.py -c configs/your_run.yml --models seq_model <optional relax> <your scores>
 ```
 
 `seq_model` is always first. Everything after that is an objective, in the order they run.
