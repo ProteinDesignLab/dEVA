@@ -7,16 +7,15 @@
 
 dEVA was introduced in [Zero-shot design of a de novo metalloenzyme](https://www.biorxiv.org/content/10.64898/2026.04.23.720277v1) to design metalloproteins and metalloenzymes. This repository contains the code and examples from the paper, as well as additional examples and functionalities of how dEVA can be used as a general-purpose protein design method.
 
-A run proposes sequences, then scores each design on more than one number at once. In the paper those numbers were:
+A dEVA design proposal proposes sequence mutations, then scores each design on more than one objective at once via a genetic algorithm. After the run, the top designs on the Pareto front are returned. 
+
+In the paper those objectives were:
 
 - **p(seq)** — does this sequence belong on this backbone? *(LigandMPNN)*
 - **p(catalytic metal)** — is there still a catalytic metal at the site? *(Metal3D-Cat)*
 
-After the run, the top designs on the Pareto front are returned. 
-
 ```bash
-python run.py -c configs/your_run.yml \
-  --models seq_model metal3d_model
+python run.py -c configs/your_run.yml --models seq_model metal3d_model
 ```
 
 Metal3D and Metal3D-Cat use the same wrapper; to toggle between them, swap the checkpoint. See [`examples/example_metal3d.md`](examples/example_metal3d.md).
