@@ -19,7 +19,7 @@ python run.py -c configs/your_run.yml \
   --models seq_model metal3d_model
 ```
 
-Metal3D and Metal3D-Cat use the same wrapper; you swap the checkpoint. See [`examples/example_metal3d.md`](examples/example_metal3d.md).
+Metal3D and Metal3D-Cat use the same wrapper; to toggle between them, swap the checkpoint. See [`examples/example_metal3d.md`](examples/example_metal3d.md).
 
 ---
 
