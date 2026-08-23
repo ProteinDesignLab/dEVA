@@ -210,7 +210,7 @@ positions and exit). Satellite drive modes: `--sat-mode {shift,cb,soft,none}`
 (plus `--max-shift`, `--sat-window`). Protpardelle extras:
 `--protpardelle-repo`, `--noise-angstrom`, `--protpardelle-steps`.
 
-See also [`docs/protpardelle_relax/`](../docs/protpardelle_relax/) for the
+See also [`models/relax.py`](../models/relax.py) for the
 evolution-time relaxer (separate from `--protpardelle` during placement).
 
 ---
@@ -233,5 +233,5 @@ python run.py -c configs/.../my_run.yml \
   --models seq_model ...
 ```
 
-If you use `protpardelle_relax` in a campaign, list it **second** (right after
+If you use `relax` in a campaign, list it **second** (right after
 `seq_model`).

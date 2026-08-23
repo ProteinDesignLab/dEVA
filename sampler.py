@@ -34,8 +34,8 @@ class Sampler(object):
             self._maybe_rescore_pmpnn(k, m, individual)
 
     def _maybe_rescore_pmpnn(self, model_key, model, individual):
-        """If protpardelle_relax rewrote the backbone, refresh pmpnn on that PDB."""
-        if model_key != 'protpardelle_relax':
+        """If relax rewrote the backbone, refresh pmpnn on that PDB."""
+        if model_key != 'relax':
             return
         if not getattr(model, 'rescore_pmpnn_after', False):
             return

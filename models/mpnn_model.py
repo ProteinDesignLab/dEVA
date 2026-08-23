@@ -145,7 +145,7 @@ class MPNNModel(BaseModel):
     def rescore(self, individual: Individual):
         """Score the individual's current sequence on its current PDB (no mutate/pack).
 
-        Overwrites fitness['pmpnn']. Used after protpardelle_relax so pmpnn reflects
+        Overwrites fitness['pmpnn']. Used after relax so pmpnn reflects
         sequence fit to the post-relax backbone that EF/pocket/desolv also see.
         """
         protein_dict, _, _, icodes, _ = parse_PDB(

@@ -43,7 +43,7 @@ def _get(cfg, key, default=None):
 class LysPkaModel(BaseModel):
     """Catalytic-lysine pKa objective for retro-aldolase design.
 
-    score = pka_gate * (env + amide + tyr + burial)      higher is better
+    score = pka_gate * (env + amide + burial)      higher is better
 
     Calibrated on the RA95 evolution series (4A29 -> 4A2S -> 4A2R -> 5AN7):
     every functional variant has an apo Lys pKa of 7.0-8.5 and NO ionizable
@@ -129,11 +129,6 @@ class LysPkaModel(BaseModel):
         self.amide_opt = float(_get(mc, "amide_opt", 2.9))
         self.amide_weight = float(_get(mc, "amide_weight", 0.6))
 
-        self.tyr_lo = float(_get(mc, "tyr_lo", 2.4))
-        self.tyr_hi = float(_get(mc, "tyr_hi", 3.9))
-        self.tyr_opt = float(_get(mc, "tyr_opt", 3.2))
-        self.tyr_weight = float(_get(mc, "tyr_weight", 0.5))
-
         self.burial_weight = float(_get(mc, "burial_weight", 0.4))
         self.burial_ref_shift = float(_get(mc, "burial_ref_shift", 2.93))
 
@@ -149,7 +144,7 @@ class LysPkaModel(BaseModel):
         self.write_components = bool(_get(mc, "write_components", True))
         self.verbose = bool(_get(mc, "verbose", False))
 
-        self.lys_resi, self.tyr_resi = self._resolve_residues()
+        self.lys_resi = self._resolve_lys()
 
         if bool(_get(mc, "require_lys", True)):
             self._assert_is_lys(self.pdb, self.lys_resi)
@@ -161,46 +156,45 @@ class LysPkaModel(BaseModel):
         if self.write_components and not os.path.exists(self.components_csv):
             with open(self.components_csv, "w") as fh:
                 fh.write("gen,index,structure,score,apo_pka,in_window,gate,env,"
-                         "amide,tyr,burial,n_ionizable,ionizable,amide_contact,"
-                         "tyr_dist\n")
+                         "amide,burial,n_ionizable,ionizable,amide_contact\n")
 
         logger.info(
-            "lys_pka [quiet-propka build]: catalytic Lys%d (Tyr%s), apo=%s, window %.1f-%.1f",
-            self.lys_resi, self.tyr_resi, self.ignore_ligand,
+            "lys_pka [quiet-propka build]: catalytic Lys%d, apo=%s, window %.1f-%.1f",
+            self.lys_resi, self.ignore_ligand,
             self.pka_lo, self.pka_hi)
 
-    def _resolve_residues(self):
-        """lys_resi/tyr_resi -> fixed_residues[index] -> theozyme_residues[index]."""
+    def _resolve_lys(self):
+        """lys_resi -> fixed_residues[lys_index] -> theozyme_residues[lys_index]."""
         mc = self.model_config
         li = int(_get(mc, "lys_index", 0))
-        ti = int(_get(mc, "tyr_index", 1))
 
         lys = _get(mc, "lys_resi")
-        tyr = _get(mc, "tyr_resi")
         if lys is not None:
-            return int(lys), (int(tyr) if tyr is not None else None)
+            return int(lys)
+
+        def num(tok):
+            digits = "".join(c for c in tok if c.isdigit())
+            return int(digits) if digits else None
 
         src = _get(mc, "fixed_from", "ligandmpnn")
         block = _get(self.config.models, src)
         fixed = _get(block, "fixed_residues", "")
         toks = [t.strip() for t in str(fixed).split() if t.strip()]
-        if len(toks) > max(li, ti):
-            def num(tok):
-                digits = "".join(c for c in tok if c.isdigit())
-                return int(digits) if digits else None
-            lys, tyr = num(toks[li]), num(toks[ti])
+        if len(toks) > li:
+            lys = num(toks[li])
             if lys is not None:
-                logger.info("lys_pka: resolved Lys%d / Tyr%s from %s.fixed_residues %s",
-                            lys, tyr, src, toks)
-                return lys, tyr
+                logger.info("lys_pka: resolved Lys%d from %s.fixed_residues %s",
+                            lys, src, toks)
+                return lys
 
-        theo = _get(_get(self.config.models, "protpardelle_relax"),
+        theo = _get(_get(self.config.models, "relax")
+                    or _get(self.config.models, "protpardelle_relax"),
                     "theozyme_residues", [])
         theo = list(theo)
-        if len(theo) > max(li, ti):
-            logger.info("lys_pka: resolved Lys%d / Tyr%s from theozyme_residues",
-                        int(theo[li]), theo[ti])
-            return int(theo[li]), int(theo[ti])
+        if len(theo) > li:
+            logger.info("lys_pka: resolved Lys%d from theozyme_residues",
+                        int(theo[li]))
+            return int(theo[li])
 
         raise ValueError(
             "lys_pka: could not resolve the catalytic Lys. Set lys_resi "
@@ -305,18 +299,6 @@ class LysPkaModel(BaseModel):
                     best, who = s, f"{resn}{num}.{name}@{d:.2f}"
         return self.amide_weight * best, who
 
-    def _tyr(self, atoms, nz):
-        if self.tyr_resi is None:
-            return 0.0, None
-        for resn, num, name, xyz in atoms:
-            if num == self.tyr_resi and name == "OH":
-                d = math.dist(xyz, nz)
-                if self.tyr_lo <= d <= self.tyr_hi:
-                    s = 1.0 - abs(d - self.tyr_opt) / (self.tyr_hi - self.tyr_lo)
-                    return self.tyr_weight * max(0.0, s), d
-                return 0.0, d
-        return 0.0, None
-
     def _burial(self, pka):
         shift = MODEL_PKA_LYS - pka
         if shift <= 0:
@@ -324,18 +306,18 @@ class LysPkaModel(BaseModel):
         return self.burial_weight * min(1.0, shift / self.burial_ref_shift)
 
     def _log_components(self, gen, index, path, score, pka, gate, env, amide,
-                        tyr, burial, ion, who, tyr_d):
+                        burial, ion, who):
         """Diagnostics go to CSV, never to add_fitness -- see write_components."""
         try:
             row = [str(gen), str(index), os.path.basename(path),
                    repr(float(score)), repr(float(pka)),
                    str(int(self.pka_lo <= pka <= self.pka_hi)), repr(float(gate)),
-                   repr(float(env)), repr(float(amide)), repr(float(tyr)),
+                   repr(float(env)), repr(float(amide)),
                    repr(float(burial)),
                    str(len(ion)),
                    ";".join(f"{k}@{v}" for k, v in sorted(ion.items(),
                                                           key=lambda x: x[1])),
-                   who or "", "" if tyr_d is None else str(tyr_d)]
+                   who or ""]
             with open(self.components_csv, "a") as fh:
                 fh.write(",".join(row) + "\n")
         except Exception as exc:                                  # noqa: BLE001
@@ -376,27 +358,26 @@ class LysPkaModel(BaseModel):
             gate = self._pka_gate(pka)
             env, ion = self._env(atoms, nz)
             amide, who = self._amide(atoms, nz)
-            tyr, tyr_d = self._tyr(atoms, nz)
             burial = self._burial(pka)
 
-            geom = env + amide + tyr + burial
+            geom = env + amide + burial
             score = gate * geom if self.gate_mode == "multiply" else gate + geom
 
             fitness["lys_pka_score"] = float(score)
 
             if self.write_components:
                 self._log_components(
-                    gen, index, curr_pdb, score, pka, gate, env, amide, tyr,
-                    burial, ion, who, tyr_d)
+                    gen, index, curr_pdb, score, pka, gate, env, amide,
+                    burial, ion, who)
 
             if self.verbose:
                 logger.info(
                     "lys_pka gen%s ind%s: pKa %r gate %r env %r (%s) "
-                    "amide %r (%s) tyr %r (%s) burial %r -> %r",
+                    "amide %r (%s) burial %r -> %r",
                     gen, index, pka, gate, env,
                     ",".join(f"{k}@{v}" for k, v in sorted(ion.items(), key=lambda x: x[1]))
                     or "clean",
-                    amide, who or "-", tyr, tyr_d if tyr_d is not None else "-",
+                    amide, who or "-",
                     burial, score)
 
         except Exception as exc:                                  # noqa: BLE001

@@ -22,8 +22,8 @@ logger = logging.getLogger("evolution")
 logger.setLevel(logging.DEBUG)
 
 
-@register_model("protpardelle_relax")
-class ProtpardelleRelaxModel(BaseModel):
+@register_model("relax")
+class RelaxModel(BaseModel):
 
     def __init__(self):
         self.pipeline = None
@@ -31,7 +31,12 @@ class ProtpardelleRelaxModel(BaseModel):
 
     def setup(self, config: Dict, device: str = 'cpu') -> None:
         self.config = config
-        cfg = config.models.protpardelle_relax
+        models = config.models
+        cfg = models.get('relax')
+        if cfg is None:
+            cfg = models.get('protpardelle_relax')
+        if cfg is None:
+            raise KeyError("config.models.relax is required (legacy key: protpardelle_relax)")
         self.cfg = cfg
         self.verbose = bool(cfg.get('verbose', True))
         self.seed = config.general.seed
@@ -72,11 +77,11 @@ class ProtpardelleRelaxModel(BaseModel):
                 disable_tqdm=bool(cfg.get('disable_tqdm', True)))
             problems = relaxer.preflight()
             if problems:
-                msg = ('[protpardelle_relax] protpardelle is not usable: '
+                msg = ('[relax] protpardelle is not usable: '
                        + '; '.join(problems))
                 if bool(cfg.get('require_protpardelle', False)):
                     raise RuntimeError(msg)
-                print(msg + '\n[protpardelle_relax] falling back to '
+                print(msg + '\n[relax] falling back to '
                             "backend='geometric' for this run", file=sys.stderr)
                 backend = 'geometric'
                 relaxer = None
@@ -119,7 +124,7 @@ class ProtpardelleRelaxModel(BaseModel):
         # "seq fit to final BB". Set false to keep the pre-relax designer score.
         self.rescore_pmpnn_after = bool(cfg.get('rescore_pmpnn_after', True))
 
-        logger.info(f'[protpardelle_relax] backend={backend} '
+        logger.info(f'[relax] backend={backend} '
                     f'mode={self.pipeline.mode} '
                     f'theozyme={self.pipeline.theozyme_resis} '
                     f'ligand={self.pipeline.rigid.lig_key} '
@@ -137,7 +142,7 @@ class ProtpardelleRelaxModel(BaseModel):
         fixed = str(sec.get('fixed_residues', '') or '')
         var = str(sec.get('var_residues', '') or '')
         if not fixed and not var:
-            print(f'[protpardelle_relax] WARNING: {which}.fixed_residues is empty, so '
+            print(f'[relax] WARNING: {which}.fixed_residues is empty, so '
                   f'the designer may mutate the theozyme residues '
                   f'{theozyme_resis}. Set fixed_residues to pin them.', file=sys.stderr)
             return
@@ -190,9 +195,9 @@ class ProtpardelleRelaxModel(BaseModel):
         except Exception as e:
             # Print the exception message on its own line so a preceding
             # "final sequence: ..." log line is not mistaken for the cause.
-            print(f'[protpardelle_relax] relaxation failed for {pdb_in}; '
+            print(f'[relax] relaxation failed for {pdb_in}; '
                   f'keeping the unrelaxed structure', file=sys.stderr)
-            print(f'[protpardelle_relax] {type(e).__name__}: {e}', file=sys.stderr)
+            print(f'[relax] {type(e).__name__}: {e}', file=sys.stderr)
             traceback.print_exc()
             value = self.fail_value
             self._log(dict(input=pdb_in, generation=gen, index=index,

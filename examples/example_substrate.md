@@ -1,62 +1,75 @@
-# dEVA with a theozyme
+# Using dEVA with a substrate-aware score
 
-**Adding a substrate-aware objective to dEVA.**
+**Adding a substrate-aware objective to dEVA during metalloenzyme design.**
 
-dEVA is not limited to metal-coordination objectives. Here we add a third,
-substrate-aware objective and show that the designs organize into a Pareto
-front — trading substrate enclosure against sequence likelihood and
-catalytic-metal probability. We provide this as a simple example of optimization of a traditionally generated enzyme design.
+This example starts from a designed metalloenzyme with a buried active site and a bound substrate analog (`inputs/B1.pdb`). The metal site is already there. What we add is a **geometric** score that scores the occlusion of the ligand by the protein heavy atoms.
 
----
+The first two scores are the sequence and catalytic-metal terms described in the manuscript. The third is an additional score called pocket shape to allow dEVA to trade-off enclosure against likelihood and metal probability instead of burying that trade-off in a weight.
 
-## The three objectives
+> Pocket shape is a prototype geometric filter, not a binding free
+> energy. Calibrate `target_occ` on structures you trust.
 
-- **p(seq)** — how likely the sequence is, given the backbone and ligand *(LigandMPNN)*
-- **p(catalytic metal)** — probability of a catalytic metal at the site *(Metal3D-Cat)*
-- **pocket shape** — how well the pocket encloses a fixed substrate pose *(geometric term)*
-
-The first two are the objectives from the paper. The third represents a
-**geometric** score that is provided alongside the other dEVA objectives (`../models/pocket_shape.py`).
+![starting scaffold vs a dEVA design](images/scaffold_example.png)
 
 ---
 
-## The run
+## What we optimize
 
-Here we use one of the less-active enzyme designs [Kim et al.](https://www.nature.com/articles/s41586-025-09746-w) from design campaign 1 **B1**: a metalloenzyme with a buried active site and a bound substrate analog. 
+| score | desired property|
+|--------|----------------|
+| **p(seq)** | Does this sequence look like it belongs on this backbone and ligand? *(LigandMPNN)* |
+| **p(catalytic metal)** | Is there still a catalytic metal at the site? *(Metal3D-Cat)* |
+| **pocket shape** | Does the pocket enclose the fixed ligand pose, without clashing or sealing it? *(geometry)* |
 
-Here we run dEVA using three objectives, 5 individuals, 10 generations, where we fix the catalytic metal residues. To find the full yaml file, please check `../configs/substrate_example.yml`.
+---
+
+## How to run it
+
+Starting structure: `inputs/B1.pdb`. 10 generations, 5 individuals,
+1 mutation per child. Full settings:
+[`configs/substrate_example.yml`](../configs/substrate_example.yml).
 
 ```bash
-python run.py --config configs/substrate_example.yml \
-              --models seq_model metal3d_model pocket_shape
+python run.py -c configs/substrate_example.yml \
+  --models seq_model metal3d_model pocket_shape
 ```
 
 ---
 
-## The result
+## The process
 
-The Pareto front represents a real trade-off: front designs raise metal probability while
-giving up a little sequence likelihood and pocket enclosure, and one improves
-pocket shape past the input. This is what a multi-objective optimizer should
-do — satisfy the objectives jointly and make the trade-offs explicit.
+Three steps, same shape as the physics example.
 
-![Pareto front](images/pareto_substrate_ex.png)
+1. **Start from a posed site.** The metal ligands and the substrate analog are already in the PDB. Ligand-only coordinates live in `inputs/B1_ligand.pdb` (same frame as the complex).
+2. **Pick the scores.** Anything that returns a number works as a score. Here we use: sequence likelihood, catalytic-metal probability, and pocket shape.
+3. **Design with dEVA.** Mutate, score, keep the non-dominated set.
 
-**Original B1:** p(seq) 0.499 · p(metal) 0.927 · pocket 0.969
+Pink is a dEVA design, blue is the starting structure. The metal site and substrate pose stay put; the pocket side chains around them move.
 
-**Pareto front (n = 5):**
+---
 
-| p(seq) | p(cat metal) | pocket |
-|:---:|:---:|:---:|
-| 0.481 | 0.954 | 0.920 |
-| 0.480 | 0.951 | 0.929 |
-| 0.471 | 0.954 | 0.944 |
-| 0.487 | 0.943 | 0.957 |
-| 0.460 | 0.944 | 0.981 |
+## Simple explanation of pocket shape
 
+The ligand pose is fixed. The score asks how many protein heavy atoms sit near each ligand atom (**occlusion**), then subtracts clashes. The score is then normalized to be between 0 and 1.
 
-## Comparing the designs
+```
+fitness = window(occlusion) − w_clash × overlap
+```
 
-Below we compare in cyan (the new dEVA design) and orange (the original B1). We note the difference in charge and pocket shape between the original design and dEVA design, while maintaining the active site.
+`target_occ` is the occlusion you want (here 105, taken from the
+starting complex). The window is not “more burial is better”: packing
+the site completely would block solvent, so overshooting the target
+is penalized. Higher is better; 1.0 means occlusion hit the target
+and there is no clash.
 
-![active site](images/activesite_b1.png)
+---
+
+## Files
+
+| file | role |
+|---|---|
+| [`configs/substrate_example.yml`](../configs/substrate_example.yml) | this example’s run |
+| [`models/pocket_shape.py`](../models/pocket_shape.py) | ligand-pocket geometry |
+| [`models/metal3d_model.py`](../models/metal3d_model.py) | catalytic-metal probability |
+| `inputs/B1.pdb` | starting complex |
+| `inputs/B1_ligand.pdb` | ligand pose (same frame) |
