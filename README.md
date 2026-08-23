@@ -5,7 +5,7 @@
 > [!NOTE]
 > An updated version of dEVA is actively maintained at [gelnesr/dEVA](https://github.com/gelnesr/dEVA). If you have any issues, please report it there and we will get back to you ASAP.
 
-dEVA designs **metalloproteins and metalloenzymes** by evolution. It was introduced in [Zero-shot design of a de novo metalloenzyme](https://www.biorxiv.org/content/10.64898/2026.04.23.720277v1).
+dEVA was introduced in [Zero-shot design of a de novo metalloenzyme](https://www.biorxiv.org/content/10.64898/2026.04.23.720277v1) to design metalloproteins and metalloenzymes. This repository contains the code and examples from the paper, as well as additional examples and functionalities of how dEVA can be used as a general-purpose protein design method.
 
 A run proposes sequences, then scores each design on more than one number at once. In the paper those numbers were:
 
