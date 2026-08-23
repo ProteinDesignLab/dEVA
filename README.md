@@ -47,7 +47,7 @@ Full list: [`examples/README.md`](examples/README.md).
 - [Metal3D / Metal3D-Cat](examples/example_metal3d.md) — p(metal), catalytic or general
 - [A substrate-aware score](examples/example_substrate.md) — pocket shape next to sequence and Metal3D-Cat
 
-**The same process, other chemistry**
+**Other examples of objectives**
 
 - [Place a theozyme](examples/example_theozyme_placement.md)
 - [Physics terms on a posed theozyme](examples/example_physics.md)
@@ -59,8 +59,8 @@ Full list: [`examples/README.md`](examples/README.md).
 
 These are other possible additions to the dEVA design loop.
 
-| functionality | what it is | where |
-|---|---|---|
+| example functionality | what it is | where |
+|----------------------|------------|-------|
 | **Theozyme placement** | Seat a QM geometry in a scaffold before you evolve | [`examples/example_theozyme_placement.md`](examples/example_theozyme_placement.md) |
 | **relax** | Move nearby backbone. Not a score. If you use it, keep it second in `--models` | [`examples/example_relax.md`](examples/example_relax.md) |
 | **Physics terms** | Ex. electric field and desolvation as ordinary objectives | [`examples/example_physics.md`](examples/example_physics.md) |
